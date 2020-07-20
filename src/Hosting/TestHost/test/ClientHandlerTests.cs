@@ -27,7 +27,7 @@ namespace Microsoft.AspNetCore.TestHost
             var handler = new ClientHandler(new PathString("/A/Path/"), new DummyApplication(context =>
             {
                 // TODO: Assert.True(context.RequestAborted.CanBeCanceled);
-                Assert.Equal("HTTP/1.1", context.Request.Protocol);
+                Assert.Equal(HttpProtocol.Http11, context.Request.Protocol);
                 Assert.Equal("GET", context.Request.Method);
                 Assert.Equal("https", context.Request.Scheme);
                 Assert.Equal("/A/Path", context.Request.PathBase.Value);
@@ -53,7 +53,7 @@ namespace Microsoft.AspNetCore.TestHost
             var handler = new ClientHandler(new PathString("/A/Path/"), new InspectingApplication(features =>
             {
                 Assert.True(features.Get<IHttpRequestLifetimeFeature>().RequestAborted.CanBeCanceled);
-                Assert.Equal("HTTP/1.1", features.Get<IHttpRequestFeature>().Protocol);
+                Assert.Equal(HttpProtocol.Http11, features.Get<IHttpRequestFeature>().Protocol);
                 Assert.Equal("GET", features.Get<IHttpRequestFeature>().Method);
                 Assert.Equal("https", features.Get<IHttpRequestFeature>().Scheme);
                 Assert.Equal("/A/Path", features.Get<IHttpRequestFeature>().PathBase);
@@ -289,7 +289,7 @@ namespace Microsoft.AspNetCore.TestHost
             var handler = new ClientHandler(PathString.Empty, new DummyApplication(async context =>
             {
                 context.Response.Headers["TestHeader"] = "TestValue";
-                context.Response.Body.Flush();
+                await context.Response.Body.FlushAsync();
                 await block.Task;
                 await context.Response.WriteAsync("BodyFinished");
             }));
@@ -305,11 +305,11 @@ namespace Microsoft.AspNetCore.TestHost
         public async Task ClientDisposalCloses()
         {
             var block = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var handler = new ClientHandler(PathString.Empty, new DummyApplication(context =>
+            var handler = new ClientHandler(PathString.Empty, new DummyApplication(async context =>
             {
                 context.Response.Headers["TestHeader"] = "TestValue";
-                context.Response.Body.Flush();
-                return block.Task;
+                await context.Response.Body.FlushAsync();
+                await block.Task;
             }));
             var httpClient = new HttpClient(handler);
             HttpResponseMessage response = await httpClient.GetAsync("https://example.com/",
@@ -327,11 +327,11 @@ namespace Microsoft.AspNetCore.TestHost
         public async Task ClientCancellationAborts()
         {
             var block = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var handler = new ClientHandler(PathString.Empty, new DummyApplication(context =>
+            var handler = new ClientHandler(PathString.Empty, new DummyApplication(async context =>
             {
                 context.Response.Headers["TestHeader"] = "TestValue";
-                context.Response.Body.Flush();
-                return block.Task;
+                await context.Response.Body.FlushAsync();
+                await block.Task;
             }));
             var httpClient = new HttpClient(handler);
             HttpResponseMessage response = await httpClient.GetAsync("https://example.com/",

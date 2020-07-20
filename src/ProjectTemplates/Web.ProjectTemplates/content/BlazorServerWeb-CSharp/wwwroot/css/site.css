@@ -24,6 +24,7 @@ app {
     height: 3.5rem;
     display: flex;
     align-items: center;
+    z-index: 10;
 }
 
 .main {
@@ -165,6 +166,7 @@ app {
     .main .top-row {
         position: sticky;
         top: 0;
+        z-index: 1;
     }
 
     .main > div {
